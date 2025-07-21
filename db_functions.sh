@@ -1,23 +1,33 @@
 #!/bin/bash
 
+
 create_database() {
-    echo "Creating a new database..."
+    CenteredPrint "|| Creating a new database... ||"
     echo ""
-    read -p "Enter database name: " db_name
+    read -p "Please enter database name: " db_name
     echo ""
-    
-    if [[ -d "$DB_ROOT/$db_name" ]]
+
+    if  [[ -z "$db_name" ]]
     then
-        echo "Database already exists."
+        CenteredPrint "(x_x) Database name cannot be empty (x_x)"
+
+    elif [[ -d "$DB_ROOT/$db_name" ]]
+    then
+        CenteredPrint "(x_x) Database already exists (x_x)"
+    
     else
         mkdir "$DB_ROOT/$db_name"
-        echo "Database '$db_name' was created successfully."
+        CenteredPrint "(ﾉ◕ヮ◕)ﾉ Database '$db_name' was created successfully (ﾉ◕ヮ◕)ﾉ"
     fi
 }
 
 list_databases() {
     echo "Listing Available Databases: ..."
-    ls -1 "$DB_ROOT" | nl
+    echo ""
+    CenteredPrint "||====== Available Databases ======||"
+    padding_length=$(( ($width - 29) / 2 ))
+    ls -1 "$DB_ROOT" | cut -c1-29 | nl -w"$padding_length" -s'. '
+    CenteredPrint "||=================================||"
 }
 
 connect_database() {
@@ -28,13 +38,18 @@ connect_database() {
 
     read -p "Enter database number to Connect: " db_num
     db_name=$(ls -1 "$DB_ROOT" | sed -n "${db_num}p")
+    echo ""
 
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
-        echo "Connected to '$db_name'"
+        CenteredPrint "|== Connected to '$db_name' (ﾉ◕ヮ◕)ﾉ ==|"
+
+        #
         # We Will Implement Database Operations Here :D
+        #
+
     else
-        echo "Database '$db_name' does not exist."
+        echo "(x_x) Database '$db_name' does not exist (x_x)"
     fi
 }
 
@@ -46,19 +61,19 @@ drop_database() {
 
     read -p "Enter database number to Drop: " db_num
     db_name=$(ls -1 "$DB_ROOT" | sed -n "${db_num}p")
-
+    echo ""
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
-
-        read -p "Are you sure? This will delete all the data in the Database. (y/n): " confirm
+        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$db_name'. (y/n): " confirm
+        echo ""
         if [[ $confirm == "y" ]]; then
             rm -r "$DB_ROOT/$db_name"
-            echo "Database '$db_name' deleted."
+            CenteredPrint "(✖╭╮✖) Database << $db_name >> deleted Succesfully (✖╭╮✖)"
         else
-            echo "Deleting Cancelled."
+            echo "Deleting Cancelled. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
         fi
 
     else
-        echo "Database not found."
+        echo "(x_x) Database not found (x_x)"
     fi
 }

@@ -3,49 +3,79 @@
 DB_ROOT="./DataBases"
 mkdir -p "$DB_ROOT"
 source ./db_functions.sh
-width=$(tput cols)
 
+
+CenteredPrint() {
+    local text="$1"
+    local text_length=${#text}
+
+    if (( text_length > width ))
+    then
+        text="${text:0:width-3}..."
+        text_length=${#text}
+    fi
+    
+    local padding=$(( (width - text_length) / 2 ))
+    printf "%*s%s\n" "$padding" "" "$text"
+}
 
 main_menu() {
-    clear
 
     while true
     do
-        text="==========================================="
-        padding_length=$(( ($width - ${#text}) / 2 ))
-        printf "%*s\n" "$width" | tr ' ' '='
-        printf "%*s%s\n" "$padding_length" "" "$text"
-        printf "%*s%s\n" "$padding_length" "" " Welcome to the Database Management System "
-        printf "%*s%s\n" "$padding_length" "" "$text"
-        echo ""
-        echo "Please select an option:"
-        echo ""
-        echo ":.:.:.:.: Main Menu :.:.:.:.:"
-        echo "|                           |"
-        echo "|  1. Create Database       |"
-        echo "|  2. List Databases        |"
-        echo "|  3. Connect To Database   |"
-        echo "|  4. Drop Database         |"
-        echo "|  5. Exit                  |"
-        echo "|                           |"
-        echo "============================="
-        read -p "Enter your choice: " choice
+        width=$(tput cols)
         clear
-        echo "You selected option $choice"
+
+        printf "%*s\n" "$width" | tr ' ' '='
+        CenteredPrint "==============================================="
+        CenteredPrint "|| Welcome to the Database Management System ||"
+        CenteredPrint "==============================================="
+        echo ""
+        CenteredPrint "Please select an option:"
+        echo ""
+        CenteredPrint ":.:.:.:.: Main Menu :.:.:.:.:"
+        CenteredPrint "|                           |"
+        CenteredPrint "|  1. Create Database       |"
+        CenteredPrint "|  2. List Databases        |"
+        CenteredPrint "|  3. Connect To Database   |"
+        CenteredPrint "|  4. Drop Database         |"
+        CenteredPrint "|  5. Exit                  |"
+        CenteredPrint "|                           |"
+        CenteredPrint "============================="
+        echo "" 
+        read -p "Enter your choice: " choice
+        echo ""
+        
         case $choice in
-            1) create_database 
+            1) create_database
+            echo ""
+            read -p "Press Enter to continue..." 
             ;;
             2) list_databases 
+            echo ""
             read -p "Press Enter to continue..."
             ;;
-            3) connect_database 
+            3) connect_database
+            echo "" 
+            read -p "Press Enter to continue..."
             ;;
-            4) drop_database 
+            4) drop_database
+            echo ""
+            read -p "Press Enter to continue..." 
             ;;
-            5) echo "CY@!"; 
+            5) CenteredPrint "   ==========================================================================="
+            CenteredPrint "|| Hope you enjoyed using the Database Management System! (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ ||"
+            CenteredPrint "   ==========================================================================="
+
+            CenteredPrint "|| Exiting... (╯°□°）╯︵ ┻━┻ ||"
+
+            printf "%*s\n" "$width" | tr ' ' '='
             exit 0 
             ;;
-            *) echo "Invalid choice, please try again." ;;
+            *) CenteredPrint "Invalid choice, please try again."
+            echo "" 
+            read -p "Press Enter to continue..."
+            ;;
         esac
     done
 }
