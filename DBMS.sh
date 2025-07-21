@@ -3,11 +3,21 @@
 DB_ROOT="./DataBases"
 mkdir -p "$DB_ROOT"
 source ./db_functions.sh
+width=$(tput cols)
+
 
 main_menu() {
     clear
+
     while true
     do
+        text="==========================================="
+        padding_length=$(( ($width - ${#text}) / 2 ))
+        printf "%*s\n" "$width" | tr ' ' '='
+        printf "%*s%s\n" "$padding_length" "" "$text"
+        printf "%*s%s\n" "$padding_length" "" " Welcome to the Database Management System "
+        printf "%*s%s\n" "$padding_length" "" "$text"
+        echo ""
         echo "Please select an option:"
         echo ""
         echo ":.:.:.:.: Main Menu :.:.:.:.:"
