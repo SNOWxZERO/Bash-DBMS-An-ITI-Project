@@ -1,5 +1,7 @@
 #!/bin/bash
 shopt -s extglob
+
+# To be Removed After Adjusting the code to use table_functions.sh and collecting functions in it
 # Connecte_DB needs to be assigned in connected db
 
 echo "Creating a new table ..."
