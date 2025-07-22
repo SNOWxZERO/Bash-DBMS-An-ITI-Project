@@ -1,5 +1,6 @@
 #!/bin/bash
 
+source ./tb_functions.sh
 
 create_database() {
     CenteredPrint "|| Creating a new database... ||"
@@ -42,11 +43,12 @@ connect_database() {
 
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
-        CenteredPrint "|== Connected to '$db_name' (ﾉ◕ヮ◕)ﾉ ==|"
+        
+        source ./table_main_menu.sh
+        table_main_menu
 
-        #
-        # We Will Implement Database Operations Here :D
-        #
+
+       
 
     else
         echo "(x_x) Database '$db_name' does not exist (x_x)"

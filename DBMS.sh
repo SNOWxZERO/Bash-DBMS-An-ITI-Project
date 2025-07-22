@@ -2,7 +2,7 @@
 
 DB_ROOT="./DataBases"
 mkdir -p "$DB_ROOT"
-source ./db_functions.sh
+source ./database_functions.sh
 
 
 CenteredPrint() {
@@ -19,7 +19,7 @@ CenteredPrint() {
     printf "%*s%s\n" "$padding" "" "$text"
 }
 
-main_menu() {
+DBMS_main_menu() {
 
     while true
     do
@@ -63,9 +63,11 @@ main_menu() {
             echo ""
             read -p "Press Enter to continue..." 
             ;;
-            5) CenteredPrint "   ==========================================================================="
+            5) 
+            CenteredPrint "  ==========================================================================="
             CenteredPrint "|| Hope you enjoyed using the Database Management System! (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ ||"
-            CenteredPrint "   ==========================================================================="
+            CenteredPrint "  ==========================================================================="
+
 
             CenteredPrint "|| Exiting... (╯°□°）╯︵ ┻━┻ ||"
 
@@ -80,4 +82,4 @@ main_menu() {
     done
 }
 
-main_menu
+DBMS_main_menu
