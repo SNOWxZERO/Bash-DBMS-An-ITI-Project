@@ -17,12 +17,13 @@ table_main_menu() {
         CenteredPrint ":.:.:.:.: Table Menu :.:.:.:.:"
         CenteredPrint "|                            |"
         CenteredPrint "|    1. Create Table         |"
-        CenteredPrint "|    2. List Tables          |"
-        CenteredPrint "|    3. Drop Table           |"
-        CenteredPrint "|    4. Insert into Table    |"
-        CenteredPrint "|    5. Select from Table    |"
-        CenteredPrint "|    6. Delete from Table    |"
-        CenteredPrint "|    7. Back to Main Menu    |"
+        CenteredPrint "|    2. Update Table Meta    |"
+        CenteredPrint "|    3. List Tables          |"
+        CenteredPrint "|    4. Drop Table           |"
+        CenteredPrint "|    5. Insert into Table    |"
+        CenteredPrint "|    6. Select from Table    |"
+        CenteredPrint "|    7. Delete from Table    |"
+        CenteredPrint "|    8. Back to Main Menu    |"
         CenteredPrint "|                            |"
         CenteredPrint "=============================="
         echo "" 
@@ -34,27 +35,31 @@ table_main_menu() {
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            2) list_tables
+            2) update_table_meta
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            3) drop_table
+            3) list_tables
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            4) insert_into_table
+            4) drop_table
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            5) select_from_table
+            5) insert_into_table
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            6) delete_from_table
+            6) select_from_table
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            7) CenteredPrint "Returning to Main Menu..."
+            7) delete_from_table
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+            8) CenteredPrint "Returning to Main Menu..."
             echo ""
             CenteredPrint " ======================================"
             CenteredPrint "|| Exiting '$db_name'... (╯°□°）╯︵ ┻━┻ ||"

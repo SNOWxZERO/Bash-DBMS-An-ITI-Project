@@ -47,9 +47,6 @@ connect_database() {
         source ./table_main_menu.sh
         table_main_menu
 
-
-       
-
     else
         echo "(x_x) Database '$db_name' does not exist (x_x)"
     fi
