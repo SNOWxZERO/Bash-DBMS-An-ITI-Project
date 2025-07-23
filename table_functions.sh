@@ -24,7 +24,7 @@ create_table() {
                 while true
                 do
                     echo ""
-                    read -p "Enter table name: " column_name
+                    read -p "Enter column name: " column_name
 
                     if [[ "$column_name" =~ ^[a-zA-Z][a-zA-Z0-9_]*$ ]]; then
                         echo "Valid column name"
@@ -97,4 +97,69 @@ drop_table() {
     else
         echo "Table not found."
     fi
+}
+
+
+insert_into_table(){
+    echo "insert into table..."
+    echo ""
+    list_tables
+    echo ""
+
+    read -p "Enter table number to insert into: " table_num
+
+    # Get table name from the numbered list
+    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    # Get columns types from meta file 
+    table_columns=($(cut -d: -f2 "$DB_ROOT/$db_name/$table_name.meta"))
+    while true;
+    do
+        read -n1 -p "Write 1 to insert ......... Write 2 to exit: " user_desire
+        echo ""
+            if [[ "$user_desire" == "1" ]]
+            then
+                insertion=""
+                for type in "${table_columns[@]}"
+                do
+                    while true;
+                    do
+                        read -p "enter $type value: " value 
+                        case $type in
+                            "int")
+                                    if [[ "$value" =~ ^[0-9]+$ ]]; then
+                                        if [[ -z "$insertion" ]]; then
+                                                insertion="$value"
+                                        else
+                                                insertion+=":$value"
+                                        fi
+                                        break
+                                        
+                                    else
+                                        echo "❌ Not an integer.."
+                                    fi
+                                    ;;
+                            "string")
+                                    if [[ -n "$value" ]]; then
+                                        if [[ -z "$insertion" ]]; then
+                                                insertion="$value"
+                                        else
+                                                insertion+=":$value"
+                                        fi
+                                        break
+                                    else
+                                        echo "❌ No string.."
+                                    fi
+                                    ;;
+                        esac
+                    done
+                done
+            
+                echo "$insertion">> "$DB_ROOT/$db_name/$table_name.data"
+            elif [[ "$user_desire" == "2" ]]
+            then
+                break  
+            else
+                echo "❌ Invalid entry. Please enter 1 or 2."
+            fi
+    done
 }
