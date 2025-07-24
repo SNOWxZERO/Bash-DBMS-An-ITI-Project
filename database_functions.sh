@@ -11,11 +11,13 @@ create_database() {
     if  [[ -z "$db_name" ]]
     then
         CenteredPrint "(x_x) Database name cannot be empty (x_x)"
-
+    elif [[ ! "$db_name" =~ $valid_string ]]
+    then
+        CenteredPrint "(x_x) Invalid database name. Must start with a letter and contain only letters, digits, or underscores (x_x)"
+    
     elif [[ -d "$DB_ROOT/$db_name" ]]
     then
-        CenteredPrint "(x_x) Database already exists (x_x)"
-    
+        CenteredPrint "(x_x) Database '$db_name' already exists (x_x)"
     else
         mkdir "$DB_ROOT/$db_name"
         CenteredPrint "(ﾉ◕ヮ◕)ﾉ Database '$db_name' was created successfully (ﾉ◕ヮ◕)ﾉ"
@@ -23,11 +25,17 @@ create_database() {
 }
 
 list_databases() {
+    clear
+    printf "%*s\n" "$width" | tr ' ' '=' 
+    echo ""
+
     echo "Listing Available Databases: ..."
     echo ""
     CenteredPrint "||====== Available Databases ======||"
+    echo ""
     padding_length=$(( ($width - 29) / 2 ))
     ls -1 "$DB_ROOT" | cut -c1-29 | nl -w"$padding_length" -s'. '
+    echo ""
     CenteredPrint "||=================================||"
 }
 
@@ -46,9 +54,6 @@ connect_database() {
         
         source ./table_main_menu.sh
         table_main_menu
-
-
-       
 
     else
         echo "(x_x) Database '$db_name' does not exist (x_x)"
