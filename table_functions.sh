@@ -157,6 +157,7 @@ insert_into_table(){
                 echo "$insertion">> "$DB_ROOT/$db_name/$table_name.data"
             elif [[ "$user_desire" == "2" ]]
             then
+                echo "leaving insertions mood..."
                 break  
             else
                 echo "❌ Invalid entry. Please enter 1 or 2."
