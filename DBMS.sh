@@ -3,7 +3,7 @@
 DB_ROOT="./DataBases"
 mkdir -p "$DB_ROOT"
 source ./database_functions.sh
-
+valid_string="^[a-zA-Z][a-zA-Z0-9_]*$"
 
 CenteredPrint() {
     local text="$1"
