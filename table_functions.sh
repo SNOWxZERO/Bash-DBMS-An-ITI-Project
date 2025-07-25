@@ -454,3 +454,86 @@ select_from_table() {
     echo ""
     CenteredPrint "||=================================||"
 }
+
+delete_from_table() {
+    echo "Delete from table..."
+    echo ""
+    list_tables
+    echo ""
+
+    read -p "Enter table number to delete from: " table_num
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    then
+        CenteredPrint "(x_x) Invalid table number. (x_x)"
+        return
+    fi
+
+    # Get table name from the numbered list
+    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    
+    if [[ ! -f "$DB_ROOT/$db_name/$table_name.data" ]]
+    then
+        CenteredPrint "(x_x) Table does not exist. (x_x)"
+        return
+    fi
+
+    read -p "Enter your key word for deletion : " key_word
+    if [[ -z "$key_word" ]]
+    then
+        CenteredPrint "(x_x) No keyword provided. (x_x)"
+        return
+    fi
+    matches=$(grep -i "$key_word" "$DB_ROOT/$db_name/$table_name.data")
+    if [[ -z "$matches" ]]
+    then
+        CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
+        return
+    fi
+    echo ""
+    read -p "do you want to preview the records to be deleted? (y/n): " preview
+    echo ""
+    if [[ $preview == "y" ]]
+    then
+        echo "$matches" | nl -w2 -s'. ' | column -t -s:
+        echo ""
+        CenteredPrint "||=================================||"
+        echo ""
+        read -p "Do you want to delete specific records? (y/n): " delete_specific
+        if [[ $delete_specific == "y" ]]
+        then
+            echo ""
+            read -p "Enter the record number to delete (use 0 to cancel): " record_num
+            if [[ ! "$record_num" =~ ^[0-9]+$ ]] || (( record_num < 0 ))
+            then
+                CenteredPrint "(x_x) Invalid record number. (x_x)"
+                return
+            fi
+            if (( record_num == 0 ))
+            then
+                CenteredPrint "Deletion cancelled."
+                return
+            else
+                record_to_delete=$(echo "$matches" | sed -n "${record_num}p")
+                if [[ -z "$record_to_delete" ]]
+                then
+                    CenteredPrint "(x_x) Invalid record number. (x_x)"
+                    return
+                fi
+                key_word="$record_to_delete"
+            fi
+        fi    
+    fi
+    echo ""
+    read -p "Are you sure you want to delete these records? (y/n): " confirm
+    if [[ $confirm != "y" ]]
+    then
+        CenteredPrint "Deletion cancelled."
+        return
+    fi
+
+    grep -v -i "$key_word" "$DB_ROOT/$db_name/$table_name.data" > temp_file && mv temp_file "$DB_ROOT/$db_name/$table_name.data"
+    
+    CenteredPrint "(ﾉ◕ヮ◕)ﾉ Records deleted successfully. (ﾉ◕ヮ◕)ﾉ"
+}
+
+
