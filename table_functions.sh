@@ -412,4 +412,45 @@ insert_into_table(){
     done
 }
 
+select_from_table() {
+    echo "Select from table..."
+    echo ""
+    list_tables
+    echo ""
 
+    read -p "Enter table number to select from: " table_num
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    then
+        CenteredPrint "(x_x) Invalid table number. (x_x)"
+        return
+    fi
+
+    # Get table name from the numbered list
+    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    
+    if [[ ! -f "$DB_ROOT/$db_name/$table_name.data" ]]
+    then
+        CenteredPrint "(x_x) Table does not exist. (x_x)"
+        return
+    fi
+
+    echo ""
+    CenteredPrint "||====== Data in '$table_name' ======||"
+    echo ""
+    
+    read -p "Enter your key word for selection : " key_word
+    if [[ -z "$key_word" ]]
+    then
+        CenteredPrint "(x_x) No keyword provided. (x_x)"
+        return
+    fi
+    matches=$(grep -i "$key_word" "$DB_ROOT/$db_name/$table_name.data")
+    if [[ -z "$matches" ]]
+    then
+        CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
+        return
+    fi
+    echo "$matches" | column -t -s:
+    echo ""
+    CenteredPrint "||=================================||"
+}
