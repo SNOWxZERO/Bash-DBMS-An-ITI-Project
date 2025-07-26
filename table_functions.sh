@@ -123,7 +123,7 @@ create_table() {
             printf "%*s\n" "$width" | tr ' ' '=' 
         fi
     else
-        CenteredPrint "Name Must start with a letter and contain only letters, digits, or underscores."
+        CenteredPrint "(x_x) Name Must start with a letter and contain only letters, digits, or underscores. (x_x)"
     fi
 }
 
@@ -134,10 +134,19 @@ update_table_meta() {
     echo ""
 
     read -p "Enter table number to update: " table_num
+    echo ""
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    then
+        CenteredPrint "(x_x) Invalid table number. Please enter a valid number (x_x)"
+        return
+    fi
+
     table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
     meta_file="$DB_ROOT/$db_name/$table_name.meta"
     data_file="$DB_ROOT/$db_name/$table_name.data"
-    if [[ ! -f "$meta_file" ]]; then
+
+    if [[ ! -f "$meta_file" ]]
+    then
         CenteredPrint "(x_x) Table '$table_name' does not exist. (x_x)"
         return
     fi
@@ -304,111 +313,153 @@ list_tables() {
     echo ""
     echo "Listing Available Tables: ..."
     echo ""
-    CenteredPrint "||====== Available Tables in ======||"
+    CenteredPrint "||====== Available Tables ======||"
     echo ""
-    padding_length=$(( ($width - 29) / 2 ))
-    ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | cut -c1-29 | nl -w"$padding_length" -s'. '
+    padding_length=$(( ($width - 26) / 2 ))
+    ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | cut -c1-26 | nl -w"$padding_length" -s'. '
     echo ""
-    CenteredPrint "||=================================||"
+    CenteredPrint "||==============================||"
 }
 
 drop_table() {
 
-    echo "Drop a table..."
     echo ""
     list_tables
+    echo "Dropping a table: ..."
     echo ""
 
     read -p "Enter table number to drop: " table_num
+    echo ""
     if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
     then
-        CenteredPrint "(x_x) Invalid table number. (x_x)"
+        CenteredPrint "(x_x) Invalid table number. Please enter a valid number (x_x)"
+        return
+    fi
+
+    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+
+    if [[ -f "$DB_ROOT/$db_name/$table_name.data" ]]
+    then
+        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$table_name' Table (y/n): " confirm
+        echo ""
+        if [[ $confirm == "y" ]]
+        then
+            rm -f "$DB_ROOT/$db_name/$table_name.data" "$DB_ROOT/$db_name/$table_name.meta"
+            CenteredPrint "(✖╭╮✖) Table << '$table_name' >> dropped successfully. (✖╭╮✖)"
+        else
+            CenteredPrint "Deletion cancelled. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+        fi
+    else
+        CenteredPrint "(x_x) Table does not exist. (x_x)"  
+    fi
+}
+
+
+insert_into_table() {
+
+    list_tables
+    echo "Inserting into table..."
+    echo ""
+
+    read -p "Enter table number to insert into: " table_num
+    echo ""
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    then
+        CenteredPrint "(x_x) Invalid table number. Please enter a valid number (x_x)"
         return
     fi
 
     # Get table name from the numbered list
     table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
-
-    # Check if the table exists
-    if [[ -f "$DB_ROOT/$db_name/$table_name.data" ]]
+    meta_file="$DB_ROOT/$db_name/$table_name.meta"
+    data_file="$DB_ROOT/$db_name/$table_name.data"
+    if [[ ! -f "$meta_file" ]]
     then
-        read -p "Are you sure you want to drop the table '$table_name'? This will delete all data. (y/n): " confirm
-        echo ""
-        if [[ $confirm == "y" ]]
-        then
-            rm -f "$DB_ROOT/$db_name/$table_name.data" "$DB_ROOT/$db_name/$table_name.meta"
-            CenteredPrint "Table '$table_name' dropped successfully."
-        else
-            CenteredPrint "Deletion cancelled."
-        fi
-    else
-        echo ""
         CenteredPrint "(x_x) Table does not exist. (x_x)"
-        
+        return
     fi
-}
-
-insert_into_table(){
-    echo "insert into table..."
-    echo ""
-    list_tables
-    echo ""
-
-    read -p "Enter table number to insert into: " table_num
-
-    # Get table name from the numbered list
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
-    # Get columns types from meta file 
-    table_columns=($(cut -d: -f2 "$DB_ROOT/$db_name/$table_name.meta"))
-    while true;
+    if [[ ! -f "$data_file" ]]
+    then
+        CenteredPrint "(x_x) Table data file does not exist. Creating it again (x_x)"
+        touch "$data_file"
+    fi
+    # Get columns types from meta file
+    while true
     do
-        read -n1 -p "Write 1 to insert ......... Write 2 to exit: " user_desire
+        read -p "Insert into table ? (y/n): " user_desire
         echo ""
-            if [[ "$user_desire" == "1" ]]
-            then
-                insertion=""
-                for type in "${table_columns[@]}"
+        if [[ "$user_desire" == "y" || "$user_desire" == "Y" ]]
+        then
+            insertion=""
+            meta_file="$DB_ROOT/$db_name/$table_name.meta"
+            line_count=$(wc -l < "$meta_file")
+
+            for (( i=1; i<=line_count; i++ ))
+            do
+                clear
+                printf "%*s\n" "$width" | tr ' ' '='
+                CenteredPrint "||====== Inserting into '$table_name' ======||"
+                echo ""
+                CenteredPrint "||=== $insertion: ===||"
+                col=$(sed -n "${i}p" "$meta_file")
+
+                col_type=$(echo "$col" | cut -d':' -f2)
+                col_name=$(echo "$col" | cut -d':' -f1)
+                
+                is_pk=false
+                tmpmsg=""
+                if echo "$col" | grep -q ':PK$'
+                then
+                    is_pk=true
+                    tmpmsg="(Primary Key)"
+                fi
+
+                while true
                 do
-                    while true;
-                    do
-                        read -p "enter $type value: " value 
-                        case $type in
-                            "int")
-                                    if [[ "$value" =~ ^[0-9]+$ ]]; then
-                                        if [[ -z "$insertion" ]]; then
-                                                insertion="$value"
-                                        else
-                                                insertion+=":$value"
-                                        fi
-                                        break
-                                        
-                                    else
-                                        echo "❌ Not an integer.."
-                                    fi
-                                    ;;
-                            "string")
-                                    if [[ -n "$value" ]]; then
-                                        if [[ -z "$insertion" ]]; then
-                                                insertion="$value"
-                                        else
-                                                insertion+=":$value"
-                                        fi
-                                        break
-                                    else
-                                        echo "❌ No string.."
-                                    fi
-                                    ;;
-                        esac
-                    done
+                    echo ""
+                    read -p "enter $col_type value for '$col_name' $tmpmsg: " value
+                    echo "" 
+
+                    if [[ "$col_type" == "int" && ! "$value" =~ ^[0-9]+$ ]]
+                    then
+                        CenteredPrint "(x_x) Invalid input. Must be a positive integer (x_x)"
+                        continue
+                    fi
+
+                    if [[ "$col_type" == "string" && -z "$value" ]]
+                    then
+                        CenteredPrint "(x_x) Cannot be empty (x_x)"
+                        continue
+                    fi
+
+                    if [[ "$is_pk" == true ]]
+                    then
+                        if cut -d':' -f"$i" "$data_file" | grep -qx "$value"
+                        then
+                            CenteredPrint "(x_x) Primary key value '$value' already exists and cannot be duplicated (x_x)"
+                            continue
+                        fi
+                    fi
+
+                    insertion+=":$value"
+                    break
                 done
-            
-                echo "$insertion">> "$DB_ROOT/$db_name/$table_name.data"
-            elif [[ "$user_desire" == "2" ]]
-            then
-                break  
-            else
-                echo "❌ Invalid entry. Please enter 1 or 2."
-            fi
+
+            done
+            clear
+            printf "%*s\n" "$width" | tr ' ' '='
+            CenteredPrint "||====== Inserting into '$table_name' ======||"
+            echo ""
+            CenteredPrint "||=== $insertion: ===||"
+            echo ""
+            insertion="${insertion#:}"
+            echo "$insertion" >> "$DB_ROOT/$db_name/$table_name.data"
+            CenteredPrint "Row << $insertion >> inserted successfully. (ﾉ◕ヮ◕)ﾉ"
+            echo ""
+        else
+            CenteredPrint "Data insertion cancelled, returning to Table Menu. (ﾉ◕ヮ◕)ﾉ"
+            break
+        fi
     done
 }
 
