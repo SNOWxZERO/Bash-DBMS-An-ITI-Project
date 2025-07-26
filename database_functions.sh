@@ -46,8 +46,15 @@ connect_database() {
     echo ""
 
     read -p "Enter database number to Connect: " db_num
-    db_name=$(ls -1 "$DB_ROOT" | sed -n "${db_num}p")
     echo ""
+    
+    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 )); then
+        CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
+        return
+    fi
+
+    db_name=$(ls -1 "$DB_ROOT" | sed -n "${db_num}p")
+    
 
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
@@ -56,7 +63,7 @@ connect_database() {
         table_main_menu
 
     else
-        echo "(x_x) Database '$db_name' does not exist (x_x)"
+        CenteredPrint "(x_x) Database '$db_name' does not exist (x_x)"
     fi
 }
 
@@ -77,10 +84,10 @@ drop_database() {
             rm -r "$DB_ROOT/$db_name"
             CenteredPrint "(✖╭╮✖) Database << $db_name >> deleted Succesfully (✖╭╮✖)"
         else
-            echo "Deleting Cancelled. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+            CenteredPrint "Deleting Cancelled. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
         fi
 
     else
-        echo "(x_x) Database not found (x_x)"
+        CenteredPrint "(x_x) Database not found (x_x)"
     fi
 }
