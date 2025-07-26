@@ -48,7 +48,8 @@ connect_database() {
     read -p "Enter database number to Connect: " db_num
     echo ""
     
-    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 )); then
+    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 ))
+    then
         CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
         return
     fi
@@ -74,13 +75,20 @@ drop_database() {
     echo ""
 
     read -p "Enter database number to Drop: " db_num
+
+    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 ))
+    then
+        CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
+        return
+    fi
     db_name=$(ls -1 "$DB_ROOT" | sed -n "${db_num}p")
     echo ""
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
-        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$db_name'. (y/n): " confirm
+        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$db_name' Database. (y/n): " confirm
         echo ""
-        if [[ $confirm == "y" ]]; then
+        if [[ $confirm == "y" ]]
+        then
             rm -r "$DB_ROOT/$db_name"
             CenteredPrint "(✖╭╮✖) Database << $db_name >> deleted Succesfully (✖╭╮✖)"
         else
