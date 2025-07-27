@@ -478,32 +478,79 @@ select_from_table() {
 
     # Get table name from the numbered list
     table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
-    
-    if [[ ! -f "$DB_ROOT/$db_name/$table_name.data" ]]
+    data_file="$DB_ROOT/$db_name/$table_name.data"
+    meta_file="$DB_ROOT/$db_name/$table_name.meta"
+    if [[ ! -f "$data_file" ]]
     then
-        CenteredPrint "(x_x) Table does not exist. (x_x)"
+        CenteredPrint "(x_x) Table data does not exist. (x_x)"
         return
     fi
 
     echo ""
     CenteredPrint "||====== Data in '$table_name' ======||"
     echo ""
-    
+    read -p "Do you want to search in a specific column? (y/n): " search_in_column
+    echo ""
+    if [[ $search_in_column == "y" ]]
+    then
+        list_columns
+        echo ""
+        read -p "Enter column number to search in: " col_num
+        if [[ ! "$col_num" =~ ^[0-9]+$ ]] || (( col_num <= 0 ))
+        then
+            CenteredPrint "(x_x) Invalid column number. (x_x)"
+            return
+        fi
+
+        col_name=$(sed -n "${col_num}p" "$meta_file" | cut -d':' -f1)
+        echo ""
+        CenteredPrint "Searching in column: $col_name"
+    else
+        col_num=0
+    fi
+    echo ""
     read -p "Enter your key word for selection : " key_word
     if [[ -z "$key_word" ]]
     then
         CenteredPrint "(x_x) No keyword provided. (x_x)"
         return
     fi
-    matches=$(grep -i "$key_word" "$DB_ROOT/$db_name/$table_name.data")
+    if [[ $col_num -gt 0 ]]
+    then
+        line_num=$(cut -d':' -f"$col_num" "$data_file" | nl | grep -i "$key_word" | cut -f1 | tr -d ' ')
+
+        sed_expr=$(echo "$line_num" | sed 's/^/-e /;s/$/p/' | tr '\n' ' ')
+
+        matches=$(sed -n $sed_expr "$data_file")
+    else
+        matches=$(grep -i "$key_word" "$data_file")
+    fi
+
     if [[ -z "$matches" ]]
     then
         CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
         return
     fi
-    echo "$matches" | column -t -s:
+    headers=$(cut -d':' -f1 "$meta_file" | tr '\n' ':')
     echo ""
-    CenteredPrint "||=================================||"
+    printf "%*s\n" "$width" | tr ' ' '='
+    echo ""
+    CenteredPrint "||====== Matching Records ======||"
+    echo ""
+    data=$(echo -e "$headers\n$matches" | column -t -s: -o ' | ' | nl -v 0 -w5 -s'. ' | sed 's/^/| /; s/$/      |/')
+    underline=$(echo "$data" | head -n 1 | sed -E 's/[^|]/-/g; s/\|/+/g')
+    underline_width=${#underline}
+    padding_length=$(( (width - underline_width) / 2 ))
+    padding=$(printf "%*s" "$padding_length" "")
+    underline="$padding$underline"
+    data=$(echo "$data" | sed "s/^/$padding/")
+    echo "$underline"
+    echo "$data" | head -n 1
+    echo "$underline" | sed "s/+/\|/g"
+    echo "$data" | tail -n +2
+    echo "$underline"
+    echo ""
+    printf "%*s\n" "$width" | tr ' ' '='
 }
 
 delete_from_table() {
@@ -586,5 +633,3 @@ delete_from_table() {
     
     CenteredPrint "(ﾉ◕ヮ◕)ﾉ Records deleted successfully. (ﾉ◕ヮ◕)ﾉ"
 }
-
-
