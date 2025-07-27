@@ -29,6 +29,8 @@ list_databases() {
     printf "%*s\n" "$width" | tr ' ' '=' 
     echo ""
 
+    number_of_databases=$(ls -1 "$DB_ROOT" | wc -l)
+
     echo "Listing Available Databases: ..."
     echo ""
     CenteredPrint "||====== Available Databases ======||"
@@ -47,8 +49,8 @@ connect_database() {
 
     read -p "Enter database number to Connect: " db_num
     echo ""
-    
-    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 ))
+
+    if [[ ! "$db_num" =~ ^[0-9]+$ ]] || (( db_num < 1 )) || (( db_num > number_of_databases ))
     then
         CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
         return
