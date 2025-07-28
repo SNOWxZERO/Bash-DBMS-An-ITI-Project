@@ -52,7 +52,7 @@ add_column() {
     is_pk=""
     if [[ "$has_pk" == false ]]
     then
-        read -p "Do you want to make this the primary key? (y/n): " make_pk
+        read -p "Do you want to make this the primary key? (y) any other key to cancel: " make_pk
         if [[ "$make_pk" == "y" || "$make_pk" == "Y" ]]
         then
             is_pk=":PK"
@@ -81,7 +81,7 @@ list_columns() {
     nl -w"$padding_length" -s'. ' "$meta_file"
     echo ""
     CenteredPrint "||=================================||"
-
+    number_of_columns=$(wc -l < "$meta_file")
 
 }
 
@@ -141,7 +141,7 @@ update_table_meta() {
         return
     fi
 
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    table_name=$(echo "$table_files" | sed -n "${table_num}p")
     meta_file="$DB_ROOT/$db_name/$table_name.meta"
     data_file="$DB_ROOT/$db_name/$table_name.data"
 
@@ -151,7 +151,9 @@ update_table_meta() {
         return
     fi
 
-    while true; do
+    while true
+    do
+        width=$(tput cols)
         list_columns
         echo ""
         CenteredPrint "Please select an option:"
@@ -172,6 +174,13 @@ update_table_meta() {
         case "$choice" in
             1)
                 read -p "Enter column number to modify: " col_num
+                if [[ ! "$col_num" =~ ^[0-9]+$ ]] || (( col_num <= 0 )) || (( col_num > number_of_columns ))
+                then
+                    CenteredPrint "(x_x) Invalid column number. (x_x)"
+                    echo ""
+                    read -p "Press Enter to continue..."
+                    continue
+                fi
                 old_column=$(sed -n "${col_num}p" "$meta_file")
                 old_type=$(echo "$old_column" | cut -d':' -f2)
                 
@@ -233,7 +242,7 @@ update_table_meta() {
                 is_pk=""
                 if [[ "$has_pk" == false ]]
                 then
-                    read -p "Do you want to make this the primary key? (y/n): " make_pk
+                    read -p "Do you want to make this the primary key? (y) any other key to cancel: " make_pk
                     if [[ "$make_pk" == "y" || "$make_pk" == "Y" ]]
                     then
                         is_pk=":PK"
@@ -316,9 +325,12 @@ list_tables() {
     CenteredPrint "||====== Available Tables ======||"
     echo ""
     padding_length=$(( ($width - 26) / 2 ))
-    ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | cut -c1-26 | nl -w"$padding_length" -s'. '
+    table_files=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//')
+    number_of_tables=$(echo "$table_files" | wc -l)
+    echo "$table_files" | cut -c1-26 | nl -w"$padding_length" -s'. '
     echo ""
     CenteredPrint "||==============================||"
+
 }
 
 drop_table() {
@@ -330,19 +342,19 @@ drop_table() {
 
     read -p "Enter table number to drop: " table_num
     echo ""
-    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 )) || (( table_num > number_of_tables ))
     then
         CenteredPrint "(x_x) Invalid table number. Please enter a valid number (x_x)"
         return
     fi
 
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    table_name=$(echo "$table_files" | sed -n "${table_num}p")
 
     if [[ -f "$DB_ROOT/$db_name/$table_name.data" ]]
     then
-        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$table_name' Table (y/n): " confirm
+        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$table_name' Table (y) any other key to cancel: " confirm
         echo ""
-        if [[ $confirm == "y" ]]
+        if [[ $confirm == "y" ]] || [[ $confirm == "Y" ]]
         then
             rm -f "$DB_ROOT/$db_name/$table_name.data" "$DB_ROOT/$db_name/$table_name.meta"
             CenteredPrint "(✖╭╮✖) Table << '$table_name' >> dropped successfully. (✖╭╮✖)"
@@ -363,14 +375,14 @@ insert_into_table() {
 
     read -p "Enter table number to insert into: " table_num
     echo ""
-    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 )) || (( table_num > number_of_tables ))
     then
         CenteredPrint "(x_x) Invalid table number. Please enter a valid number (x_x)"
         return
     fi
 
     # Get table name from the numbered list
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    table_name=$(echo "$table_files" | sed -n "${table_num}p")
     meta_file="$DB_ROOT/$db_name/$table_name.meta"
     data_file="$DB_ROOT/$db_name/$table_name.data"
     if [[ ! -f "$meta_file" ]]
@@ -386,7 +398,7 @@ insert_into_table() {
     # Get columns types from meta file
     while true
     do
-        read -p "Insert into table ? (y/n): " user_desire
+        read -p "Insert into table ? (y) any other key to cancel: " user_desire
         echo ""
         if [[ "$user_desire" == "y" || "$user_desire" == "Y" ]]
         then
@@ -463,21 +475,44 @@ insert_into_table() {
     done
 }
 
-select_from_table() {
-    echo "Select from table..."
+preview_data() {
+    data_matches=$1
+    headers=$(cut -d':' -f1 "$meta_file" | tr '\n' ':')
     echo ""
+    data=$(echo -e "$headers\n$data_matches" | column -t -s: -o ' | ' | nl -v 0 -w5 -s'.  | ' | sed 's/^/| /')
+    underline=$(echo "$data" | head -n 1 | sed -E 's/[^|]/-/g; s/\|/+/g; s/-$//')
+    underline_width=${#underline}
+    padding_length=$(( (width - underline_width) / 2 ))
+    if (( padding_length < 0 ))
+    then
+        padding_length=0
+    fi
+    padding=$(printf "%*s" "$padding_length" "")
+    underline="$padding$underline"
+    data=$(echo "$data" | sed "s/^/$padding/")
+    echo "$underline"
+    echo "$data" | head -n 1 | sed "s/0./nl/"
+    echo "$underline" | sed "s/+/\|/g"
+    echo "$data" | tail -n +2
+    echo "$underline"
+    echo ""
+}
+
+select_from_table() {
+    
     list_tables
     echo ""
-
+    echo "Select from table..."
+    echo ""
     read -p "Enter table number to select from: " table_num
-    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
+    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 )) || (( table_num > number_of_tables ))
     then
         CenteredPrint "(x_x) Invalid table number. (x_x)"
         return
     fi
 
     # Get table name from the numbered list
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
+    table_name=$(echo "$table_files" | sed -n "${table_num}p")
     data_file="$DB_ROOT/$db_name/$table_name.data"
     meta_file="$DB_ROOT/$db_name/$table_name.meta"
     if [[ ! -f "$data_file" ]]
@@ -489,14 +524,14 @@ select_from_table() {
     echo ""
     CenteredPrint "||====== Data in '$table_name' ======||"
     echo ""
-    read -p "Do you want to search in a specific column? (y/n): " search_in_column
+    read -p "Do you want to search in a specific column? (y) any other key to search all: " search_in_column
     echo ""
-    if [[ $search_in_column == "y" ]]
+    if [[ $search_in_column == "y" ]] || [[ $search_in_column == "Y" ]]
     then
         list_columns
         echo ""
         read -p "Enter column number to search in: " col_num
-        if [[ ! "$col_num" =~ ^[0-9]+$ ]] || (( col_num <= 0 ))
+        if [[ ! "$col_num" =~ ^[0-9]+$ ]] || (( col_num <= 0 )) || (( col_num > number_of_columns ))
         then
             CenteredPrint "(x_x) Invalid column number. (x_x)"
             return
@@ -531,105 +566,214 @@ select_from_table() {
         CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
         return
     fi
-    headers=$(cut -d':' -f1 "$meta_file" | tr '\n' ':')
+    number_of_matches=$(echo "$matches" | wc -l)
     echo ""
     printf "%*s\n" "$width" | tr ' ' '='
     echo ""
-    CenteredPrint "||====== Matching Records ======||"
+    CenteredPrint "||====== Matching Records $number_of_matches ======||"
     echo ""
-    data=$(echo -e "$headers\n$matches" | column -t -s: -o ' | ' | nl -v 0 -w5 -s'. ' | sed 's/^/| /; s/$/      |/')
-    underline=$(echo "$data" | head -n 1 | sed -E 's/[^|]/-/g; s/\|/+/g')
-    underline_width=${#underline}
-    padding_length=$(( (width - underline_width) / 2 ))
-    padding=$(printf "%*s" "$padding_length" "")
-    underline="$padding$underline"
-    data=$(echo "$data" | sed "s/^/$padding/")
-    echo "$underline"
-    echo "$data" | head -n 1
-    echo "$underline" | sed "s/+/\|/g"
-    echo "$data" | tail -n +2
-    echo "$underline"
-    echo ""
+    preview_data "$matches"
     printf "%*s\n" "$width" | tr ' ' '='
+    echo ""
+
 }
 
 delete_from_table() {
-    echo "Delete from table..."
-    echo ""
-    list_tables
-    echo ""
+    select_from_table
 
-    read -p "Enter table number to delete from: " table_num
-    if [[ ! "$table_num" =~ ^[0-9]+$ ]] || (( table_num <= 0 ))
-    then
-        CenteredPrint "(x_x) Invalid table number. (x_x)"
-        return
-    fi
-
-    # Get table name from the numbered list
-    table_name=$(ls -1 "$DB_ROOT/$db_name" | grep '\.data$' | sed 's/\.data$//' | sed -n "${table_num}p")
-    
-    if [[ ! -f "$DB_ROOT/$db_name/$table_name.data" ]]
-    then
-        CenteredPrint "(x_x) Table does not exist. (x_x)"
-        return
-    fi
-
-    read -p "Enter your key word for deletion : " key_word
-    if [[ -z "$key_word" ]]
-    then
-        CenteredPrint "(x_x) No keyword provided. (x_x)"
-        return
-    fi
-    matches=$(grep -i "$key_word" "$DB_ROOT/$db_name/$table_name.data")
     if [[ -z "$matches" ]]
     then
-        CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
-        return
-    fi
-    echo ""
-    read -p "do you want to preview the records to be deleted? (y/n): " preview
-    echo ""
-    if [[ $preview == "y" ]]
-    then
-        echo "$matches" | nl -w2 -s'. ' | column -t -s:
-        echo ""
-        CenteredPrint "||=================================||"
-        echo ""
-        read -p "Do you want to delete specific records? (y/n): " delete_specific
-        if [[ $delete_specific == "y" ]]
-        then
-            echo ""
-            read -p "Enter the record number to delete (use 0 to cancel): " record_num
-            if [[ ! "$record_num" =~ ^[0-9]+$ ]] || (( record_num < 0 ))
-            then
-                CenteredPrint "(x_x) Invalid record number. (x_x)"
-                return
-            fi
-            if (( record_num == 0 ))
-            then
-                CenteredPrint "Deletion cancelled."
-                return
-            else
-                record_to_delete=$(echo "$matches" | sed -n "${record_num}p")
-                if [[ -z "$record_to_delete" ]]
-                then
-                    CenteredPrint "(x_x) Invalid record number. (x_x)"
-                    return
-                fi
-                key_word="$record_to_delete"
-            fi
-        fi    
-    fi
-    echo ""
-    read -p "Are you sure you want to delete these records? (y/n): " confirm
-    if [[ $confirm != "y" ]]
-    then
-        CenteredPrint "Deletion cancelled."
+        CenteredPrint "(x_x) No records to delete. (x_x)"
         return
     fi
 
-    grep -v -i "$key_word" "$DB_ROOT/$db_name/$table_name.data" > temp_file && mv temp_file "$DB_ROOT/$db_name/$table_name.data"
-    
+    echo "Deleting records..."
+    echo ""
+    read -p "Do you want to delete specific records? (y) any other key to delete all: " delete_specific
+    echo ""
+    deleted_records="$matches"
+    if [[ $delete_specific == "y" ]] || [[ $delete_specific == "Y" ]]
+    then
+        deleted_records=""
+        while true
+        do
+            clear
+            number_of_matches=$(echo "$matches" | wc -l)
+            printf "%*s\n" "$width" | tr ' ' '='
+            echo ""
+            CenteredPrint "||====== Searched  Records ======||"
+            preview_data "$matches"
+            echo ""
+            CenteredPrint "||==== To Be Deleted Records ====||"
+            preview_data "$deleted_records"
+            echo ""
+            read -p "Enter the record number to delete (use 0 to stop selecting): " record_num
+            echo ""
+            if [[ ! "$record_num" =~ ^[0-9]+$ ]] || (( record_num < 0 )) || (( record_num > number_of_matches ))
+            then
+                CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
+                read -p "Press Enter to continue..."
+                continue
+            fi
+
+            if (( record_num == 0 ))
+            then
+
+                break
+            fi
+            record=$(echo "$matches" | sed -n "${record_num}p")
+            deleted_records+="$record"$'\n'
+            matches=$(echo "$matches" | sed -e "${record_num}d")
+         done
+    fi
+
+    clear
+    printf "%*s\n" "$width" | tr ' ' '='
+    echo ""
+    CenteredPrint "Selection stopped. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+    echo ""
+    CenteredPrint "||====== Records to be deleted ======||"
+    preview_data "$deleted_records"
+    read -p "Are you sure you want to delete these records? (y) any other key to cancel: " confirm
+    echo ""
+    if [[ $confirm != "y" ]]
+    then
+        CenteredPrint "Deletion cancelled. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+        return
+    fi
+
+
+    for record in $deleted_records
+    do
+        sed -i "/^$(echo "$record" | sed 's/[][\/.^$*+?{}()|]/\\&/g')$/d" "$data_file"
+    done
+    echo ""
     CenteredPrint "(ﾉ◕ヮ◕)ﾉ Records deleted successfully. (ﾉ◕ヮ◕)ﾉ"
+}
+
+update_table_data() {
+    select_from_table
+    if [[ -z "$matches" ]]
+    then
+        CenteredPrint "(x_x) No records to update. (x_x)"
+        return
+    fi
+
+    echo "Updating records..."
+    echo ""
+    read -p "Press Enter to continue..."
+    echo ""
+    while true
+    do
+        number_of_matches=$(echo "$matches" | wc -l)
+        clear
+        printf "%*s\n" "$width" | tr ' ' '='
+        echo ""
+        CenteredPrint "||====== Searched  Records ======||"
+        preview_data "$matches"
+        echo ""
+
+        read -p "Select a record to update (use 0 to stop): " update_record_num
+        echo ""
+        if [[ ! "$update_record_num" =~ ^[0-9]+$ ]] || (( update_record_num < 0 )) || (( update_record_num > number_of_matches ))
+        then
+            CenteredPrint "(x_x) Invalid input. Please enter a valid number (x_x)"
+            echo ""
+            read -p "Press Enter to continue..."
+            continue
+        fi
+
+        if (( update_record_num == 0 ))
+        then
+            break
+        fi
+
+        record=$(echo "$matches" | sed -n "${update_record_num}p")
+        updated_record=""
+        number_of_columns=$(wc -l < "$meta_file")
+        echo ""
+        for (( i=1; i<=number_of_columns; i++ ))
+        do
+            col=$(sed -n "${i}p" "$meta_file")
+            col_name=$(echo "$col" | cut -d':' -f1)
+            col_type=$(echo "$col" | cut -d':' -f2)
+
+            old_value=$(echo "$record" | cut -d':' -f"$i")
+
+            is_pk=false
+            tmpmsg=""
+            if echo "$col" | grep -q ':PK$'
+            then
+                is_pk=true
+                tmpmsg="(Primary Key)"
+            fi
+
+            while true
+            do
+                clear
+                printf "%*s\n" "$width" | tr ' ' '='
+                CenteredPrint "||====== Updating Record ======||"
+                echo ""
+                preview_data "$record"
+                echo ""
+                CenteredPrint "||=== $updated_record: ===||"
+                echo ""
+                read -p "Enter new value for '$col_name$tmpmsg' to no change <leave blank> : " new_value
+                echo ""
+                if [[ -z "$new_value" ]] || [[ "$new_value" == "$old_value" ]]
+                then 
+                    updated_record+=":$old_value"
+                    break
+                else
+                    if [[ "$col_type" == "int" && ! "$new_value" =~ ^[0-9]+$ ]]
+                    then
+                        CenteredPrint "(x_x) Invalid input. Must be a positive integer (x_x)"
+                        read -p "Press Enter to continue..."
+                        continue
+                    fi
+                    
+                    if [[ "$is_pk" == true ]]
+                    then
+                        if cut -d':' -f"$i" "$data_file" | grep -qx "$new_value"
+                        then
+                            CenteredPrint "(x_x) Primary key value '$new_value' already exists and cannot be duplicated (x_x)"
+                            read -p "Press Enter to continue..."
+                            continue
+                        fi
+                    fi
+
+                    updated_record+=":$new_value"
+                    break
+                fi
+            done    
+        done
+        updated_record="${updated_record#:}"
+        matches=$(echo "$matches" | sed -e "${update_record_num}d")
+        read -p "Press Enter to continue..."
+        clear
+        printf "%*s\n" "$width" | tr ' ' '='
+        CenteredPrint "||====== Updating Record ======||"
+        echo ""
+        preview_data "$record"
+        echo ""
+        CenteredPrint "||====== Updated  Record ======||"
+        echo ""
+        preview_data "$updated_record"
+        echo ""
+        read -p "Apply Changes? (y) any other key to cancel: " confirm
+        echo ""
+
+        if [[ "$confirm" != [yY] ]]
+        then
+            CenteredPrint "Changes discarded. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+            continue
+        fi
+        sed -i "/^$(echo "$record" | sed 's/[][\/.^$*+?{}()|]/\\&/g')$/c\\$updated_record" "$data_file"
+        CenteredPrint "(ﾉ◕ヮ◕)ﾉ Record updated successfully. (ﾉ◕ヮ◕)ﾉ"
+        echo ""
+        read -p "Press Enter to continue..."
+        echo ""
+    done
+    CenteredPrint "(ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ Exiting update mode. (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧"
+
 }

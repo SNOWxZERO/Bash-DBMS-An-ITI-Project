@@ -22,8 +22,9 @@ table_main_menu() {
         CenteredPrint "|    4. Drop Table           |"
         CenteredPrint "|    5. Insert into Table    |"
         CenteredPrint "|    6. Select from Table    |"
-        CenteredPrint "|    7. Delete from Table    |"
-        CenteredPrint "|    8. Back to Main Menu    |"
+        CenteredPrint "|    7. Update Table Data    |"
+        CenteredPrint "|    8. Delete from Table    |"
+        CenteredPrint "|    9. Back to Main Menu    |"
         CenteredPrint "|                            |"
         CenteredPrint "=============================="
         echo "" 
@@ -55,11 +56,15 @@ table_main_menu() {
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            7) delete_from_table
+            7) update_table_data
             echo ""
             read -p "Press Enter to continue..."
             ;;
-            8) CenteredPrint "Returning to Main Menu..."
+            8) delete_from_table
+            echo ""
+            read -p "Press Enter to continue..."
+            ;;
+            9) CenteredPrint "Returning to Main Menu..."
             echo ""
             CenteredPrint " ======================================"
             CenteredPrint "|| Exiting '$db_name'... (╯°□°）╯︵ ┻━┻ ||"

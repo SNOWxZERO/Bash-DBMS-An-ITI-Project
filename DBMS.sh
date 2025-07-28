@@ -65,7 +65,7 @@ DBMS_main_menu() {
             ;;
             5) 
             CenteredPrint "  ==========================================================================="
-            CenteredPrint "|| Hope you enjoyed using the Database Management System! (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ ||"
+            CenteredPrint "|| Hope you enjoyed using our Database Management System! (ﾉ◕ヮ◕)ﾉ*:・ﾟ✧ ||"
             CenteredPrint "  ==========================================================================="
 
 

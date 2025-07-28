@@ -87,7 +87,7 @@ drop_database() {
     echo ""
     if [[ -d "$DB_ROOT/$db_name" ]]
     then
-        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$db_name' Database. (y/n): " confirm
+        read -p "Are you sure? (╥﹏╥) This will delete all the data in '$db_name' Database. (y) any other key to cancel: " confirm
         echo ""
         if [[ $confirm == "y" ]]
         then
