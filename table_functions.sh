@@ -452,6 +452,7 @@ insert_into_table() {
                             continue
                         fi
                     fi
+                    value=$(echo "$value" | sed 's/[][\/.^$*+?{}()|]/\\&/g; s/://g')
 
                     insertion+=":$value"
                     break
@@ -477,6 +478,7 @@ insert_into_table() {
 
 preview_data() {
     data_matches=$1
+    data_matches=$(echo "$data_matches" | sed 's/\\\([][\/.^$*+?{}()|]\)/\1/g')
     headers=$(cut -d':' -f1 "$meta_file" | tr '\n' ':')
     echo ""
     data=$(echo -e "$headers\n$data_matches" | column -t -s: -o ' | ' | nl -v 0 -w5 -s'.  | ' | sed 's/^/| /')
@@ -544,13 +546,18 @@ select_from_table() {
         col_num=0
     fi
     echo ""
-    read -p "Enter your key word for selection : " key_word
+    read -p "Enter your key word for selection (Enter to select all table data) : " key_word
+    echo ""
     if [[ -z "$key_word" ]]
     then
-        CenteredPrint "(x_x) No keyword provided. (x_x)"
-        return
-    fi
-    if [[ $col_num -gt 0 ]]
+        CenteredPrint "No keyword provided, selecting all data."
+        matches=$(cat "$data_file")
+        if [[ -z "$matches" ]]
+        then
+            CenteredPrint "(x_x) No data found in '$table_name'. (x_x)"
+            return
+        fi
+    elif [[ $col_num -gt 0 ]]
     then
         line_num=$(cut -d':' -f"$col_num" "$data_file" | nl | grep -i "$key_word" | cut -f1 | tr -d ' ')
 
@@ -566,6 +573,7 @@ select_from_table() {
         CenteredPrint "(x_x) No matching records found for '$key_word'. (x_x)"
         return
     fi
+
     number_of_matches=$(echo "$matches" | wc -l)
     echo ""
     printf "%*s\n" "$width" | tr ' ' '='
